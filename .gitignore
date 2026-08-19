@@ -1,0 +1,95 @@
+node_modules/
+dist/
+# Third-party extension bundles live outside this repo (install via CLI)
+/extensions/
+scripts/.ico-tools/
+
+# SproutAI persistent config — never commit
+.sproutai/
+# Install-local agent profiles: <installRoot>/agents/.sproutai, …（不写 home）
+/agents/
+packages/coding-agent/agents/
+# Runtime agent profiles written by /config · /config-add (next to binary or package root)
+config.jsonc
+**/config.jsonc
+active-pi-config.json
+**/active-pi-config.json
+# Windows global-command PATH registration state (/sproutai-install)
+.sproutai-global-command.json
+**/.sproutai-global-command.json
+*.log
+.DS_Store
+*.tsbuildinfo
+# packages/*/node_modules/
+packages/*/dist/
+packages/*/dist-chrome/
+packages/*/dist-firefox/
+*.cpuprofile
+
+# Environment
+.env
+
+# Editor files
+.vscode/
+.zed/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+
+# Generated provider model catalogs (hydrate via packages/ai npm run generate-models)
+packages/ai/src/providers/data/
+
+# Package specific
+.npm/
+coverage/
+.nyc_output/
+.sproutai_config/
+tui-debug.log
+compaction-results/
+.opencode/
+syntax.jsonl
+out.jsonl
+pi-*.html
+out.html
+packages/coding-agent/binaries/
+todo.md
+plans/
+.sproutai/hf-sessions/
+.sproutai/hf-sessions-backup/
+.sproutai/sessions/
+.sproutai/extensions/webui/.webui.pid
+.sproutai/extensions/webui/.webui.log
+# Local runtime / secrets (do not commit)
+.local/
+progress.md
+
+# SproutAI agent: track extensions, ignore local runtime secrets and sessions
+.sproutai/agent/sessions/
+.sproutai/agent/git/
+.sproutai/agent/npm/
+.sproutai/agent/bin/
+.sproutai/agent/data/
+.sproutai/agent/auth.json
+.sproutai/agent/models.json
+.sproutai/agent/settings.json
+.sproutai/agent/mcp.json
+.sproutai/agent/mcp-cache.json
+.sproutai/agent/mcp-npx-cache.json
+.sproutai/agent/run-history.jsonl
+.sproutai/agent/taskplane/
+.sproutai/agent/skills/
+.sproutai/agent/skills-disabled/
+.sproutai/agent/extensions/webui/frontend/node_modules/
+.sproutai/agent/extensions/webui/.webui.pid
+.sproutai/agent/extensions/webui/data/
+tmp/
+collect.sh
+
+# Root-level binary/build artifacts (do not commit)
+/*.wasm
+/llvm-*.js
+/rustc-*.js
+/util_cmd-*.js
+/wasm32-*.tar.br

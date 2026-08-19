@@ -1,0 +1,11 @@
+[install]
+# Pin versions from package.json (same intent as an exact npm lock).
+exact = true
+# Match `npm install --ignore-scripts` — skip husky/postinstall/prepare.
+ignoreScripts = true
+# Keep a hoisted node_modules layout for assemble/native copies.
+linker = "hoisted"
+
+[run]
+# Do not alias `node` to bun; tests and tsgo stay on Node.
+bun = false
