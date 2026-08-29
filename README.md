@@ -26,7 +26,7 @@
 
 ## 常用命令
 
-安装依赖并构建（需要 [Bun](https://bun.sh) 1.3.14+）：
+安装依赖并构建（需要 [Bun](https://bun.sh) 1.4.0+）：
 
 ```bash
 bun install --ignore-scripts

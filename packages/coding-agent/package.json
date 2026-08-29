@@ -28,7 +28,7 @@
 	"scripts": {
 		"clean": "shx rm -rf dist",
 		"build": "tsgo -p tsconfig.build.json && shx chmod +x dist/cli.js && bun run copy-assets && shx rm -f dist/package.json",
-		"build:binary": "bun run --cwd ../tui build && bun run --cwd ../ai build && bun run --cwd ../agent build && bun run build && bun build --compile ./dist/bun/cli.js ./src/utils/image-resize-worker.ts --outfile dist/sproutai && bun run copy-binary-assets",
+		"build:binary": "bun run --cwd ../tui build && bun run --cwd ../ai build && bun run --cwd ../agent build && bun run build && bun build --compile --minify ./dist/bun/cli.js ./src/utils/image-resize-worker.ts --outfile dist/sproutai && bun run copy-binary-assets",
 		"copy-assets": "shx mkdir -p dist/modes/interactive/theme && shx cp src/modes/interactive/theme/*.json dist/modes/interactive/theme/ && shx mkdir -p dist/modes/interactive/assets && shx cp src/modes/interactive/assets/*.png dist/modes/interactive/assets/ && shx mkdir -p dist/core/export-html/vendor && shx cp src/core/export-html/template.html src/core/export-html/template.css src/core/export-html/template.js dist/core/export-html/ && shx cp src/core/export-html/vendor/*.js dist/core/export-html/vendor/",
 		"copy-binary-assets": "node scripts/assemble-binary-runtime.mjs dist --mode release",
 		"test": "vitest --run",

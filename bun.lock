@@ -1,5 +1,5 @@
 {
-  "lockfileVersion": 1,
+  "lockfileVersion": 3,
   "configVersion": 1,
   "workspaces": {
     "": {
@@ -152,6 +152,9 @@
     },
   },
   "overrides": {
+    "gaxios": {
+      "rimraf": "6.1.2",
+    },
     "rimraf": "6.1.2",
   },
   "packages": {

@@ -1,4 +1,4 @@
-import { Box, type Component, Container, getCapabilities, Image, Spacer, Text, type TUI, visibleWidth } from "@earendil-works/pi-tui";
+import { Box, type Component, Container, getCapabilities, Image, Spacer, Text, type TUI, truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 import chalk from "chalk";
 import type { ToolDefinition, ToolRenderContext } from "../../../core/extensions/types.ts";
 import { createAllToolDefinitions, type ToolName } from "../../../core/tools/index.ts";
@@ -7,33 +7,91 @@ import { stripAnsi } from "../../../utils/ansi.ts";
 import { convertToPng } from "../../../utils/image-convert.ts";
 import { theme } from "../theme/theme.ts";
 
-/** Collapsed tool-call view: keep only the title line. */
-const COLLAPSED_CALL_LINES = 1;
+/** Compact argument preview for collapsed tool-call rows. */
+const COLLAPSED_MAX_ARGS_CHARS = 240;
 
 function isVisuallyBlankLine(line: string): boolean {
 	return stripAnsi(line).trim() === "";
 }
 
-/**
- * Clamp a child component to a maximum number of rendered (visual) lines.
- * Used when tool output is collapsed so renderers that ignore `expanded`
- * (e.g. MCP call JSON dumps, single-line giant results) still fold.
- *
- * Leading blank lines (Box padding) are skipped so the title is not clipped away.
- */
-class LineClampedComponent implements Component {
-	private readonly child: Component;
-	private readonly maxLines: number;
-	private readonly getOverflowHint?: (hiddenCount: number) => string | undefined;
+/** Text/Box renderers pad lines to the requested width; drop that before appending args. */
+function trimTrailingPadding(line: string): string {
+	return line.replace(/[ \t]+$/g, "");
+}
 
-	constructor(
-		child: Component,
-		maxLines: number,
-		getOverflowHint?: (hiddenCount: number) => string | undefined,
-	) {
+function normalizeForCompact(value: unknown, depth = 0): unknown {
+	if (depth > 3 || value == null) return value;
+	if (typeof value === "string") {
+		const trimmed = value.trim();
+		if (
+			(trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+			(trimmed.startsWith("[") && trimmed.endsWith("]"))
+		) {
+			try {
+				return normalizeForCompact(JSON.parse(trimmed), depth + 1);
+			} catch {
+				return value;
+			}
+		}
+		return value;
+	}
+	if (Array.isArray(value)) {
+		return value.map((item) => normalizeForCompact(item, depth + 1));
+	}
+	if (typeof value === "object") {
+		const out: Record<string, unknown> = {};
+		for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+			out[key] = normalizeForCompact(nested, depth + 1);
+		}
+		return out;
+	}
+	return value;
+}
+
+function formatCompactToolArgs(args: unknown, maxChars = COLLAPSED_MAX_ARGS_CHARS): string {
+	if (args == null) return "";
+	let compact: string;
+	if (typeof args === "string") {
+		const trimmed = args.replace(/\s+/g, " ").trim();
+		if (!trimmed) return "";
+		try {
+			compact = JSON.stringify(normalizeForCompact(JSON.parse(trimmed)));
+		} catch {
+			compact = trimmed;
+		}
+	} else if (typeof args !== "object") {
+		compact = String(args);
+	} else if (Array.isArray(args)) {
+		if (args.length === 0) return "";
+		try {
+			compact = JSON.stringify(normalizeForCompact(args));
+		} catch {
+			return "";
+		}
+	} else if (Object.keys(args as Record<string, unknown>).length === 0) {
+		return "";
+	} else {
+		try {
+			compact = JSON.stringify(normalizeForCompact(args));
+		} catch {
+			return "";
+		}
+	}
+	if (compact.length <= maxChars) return compact;
+	return `${compact.slice(0, Math.max(0, maxChars - 3))}...`;
+}
+
+/**
+ * Collapsed tool-call row: one line, optional compact args, truncated with "...".
+ * Custom renderers keep their title; args are appended when the title has none yet.
+ */
+class CollapsedCallLine implements Component {
+	private readonly child: Component;
+	private readonly args: unknown;
+
+	constructor(child: Component, args: unknown) {
 		this.child = child;
-		this.maxLines = maxLines;
-		this.getOverflowHint = getOverflowHint;
+		this.args = args;
 	}
 
 	invalidate(): void {
@@ -41,24 +99,29 @@ class LineClampedComponent implements Component {
 	}
 
 	render(width: number): string[] {
-		const lines = this.child.render(width);
+		const maxWidth = Math.max(1, width);
+		const lines = this.child.render(Math.max(maxWidth, 10_000));
 		let start = 0;
 		while (start < lines.length && isVisuallyBlankLine(lines[start]!)) {
 			start++;
 		}
-		const content = start > 0 ? lines.slice(start) : lines;
-		if (content.length <= this.maxLines) {
-			return content;
+		const firstRaw = lines[start];
+		if (firstRaw === undefined) {
+			return [];
 		}
+		const first = trimTrailingPadding(firstRaw);
 
-		const hiddenCount = content.length - this.maxLines;
-		const hint = this.getOverflowHint?.(hiddenCount);
-		const budget = hint ? Math.max(1, this.maxLines - 1) : this.maxLines;
-		const kept = content.slice(0, budget);
-		if (hint) {
-			kept.push(...new Text(hint, 0, 0).render(width));
+		const compact = formatCompactToolArgs(this.args);
+		const stripped = stripAnsi(first);
+		if (compact && !/:\s*(\{|\[|")/.test(stripped)) {
+			const sep = theme.fg("muted", ": ");
+			const remaining = maxWidth - visibleWidth(first) - visibleWidth(sep);
+			if (remaining >= 4) {
+				const argsText = truncateToWidth(compact, remaining, "...");
+				return [`${first}${sep}${theme.fg("muted", argsText)}`];
+			}
 		}
-		return kept;
+		return [truncateToWidth(first, maxWidth, "...")];
 	}
 }
 
@@ -227,9 +290,8 @@ export class ToolExecutionComponent extends Container {
 	}
 
 	private decorateCall(component: Component): Component {
-		const clamped = this.maybeClampCall(component);
-		// Compact row: status glyph + title, no fat background bar.
-		return new PrefixedComponent(this.statusPrefix(), clamped);
+		const body = this.expanded ? component : new CollapsedCallLine(component, this.args);
+		return new PrefixedComponent(this.statusPrefix(), body);
 	}
 
 	private createResultFallback(): Component | undefined {
@@ -463,13 +525,6 @@ export class ToolExecutionComponent extends Container {
 		return getRenderedTextOutput(this.result, this.showImages);
 	}
 
-	private maybeClampCall(component: Component): Component {
-		if (this.expanded) {
-			return component;
-		}
-		return new LineClampedComponent(component, COLLAPSED_CALL_LINES);
-	}
-
 	private maybeClampResult(component: Component): Component {
 		if (this.expanded) {
 			return component;
@@ -482,6 +537,10 @@ export class ToolExecutionComponent extends Container {
 		const title = theme.fg("toolTitle", theme.bold(this.toolName));
 		let text = `${this.statusPrefix()}${title}`;
 		if (!this.expanded) {
+			const compact = formatCompactToolArgs(this.args);
+			if (compact) {
+				text += theme.fg("muted", `: ${compact}`);
+			}
 			return text;
 		}
 		const content = JSON.stringify(this.args, null, 2);

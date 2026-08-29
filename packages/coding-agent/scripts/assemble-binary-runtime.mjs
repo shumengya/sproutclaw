@@ -200,6 +200,10 @@ export function assembleBinaryRuntime(targetDir, platform, mode = "release") {
 	writeRuntimePackageJson(targetDir);
 
 	// --- image tooling (loaded next to execPath) ---
+	// Keep Photon WASM as fallback for Node builds and when Bun.Image fails.
+	// Bun 1.4+ prefers Bun.Image in-process; do not drop this sidecar until that
+	// path is proven across platforms and the Node/npm distribution no longer
+	// needs Photon (see image-resize-core.ts).
 	const wasmSrc = path.join(
 		MonoRoot,
 		"node_modules",

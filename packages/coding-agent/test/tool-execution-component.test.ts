@@ -397,6 +397,80 @@ describe("ToolExecutionComponent parity", () => {
 		expect(rendered).toContain("done");
 	});
 
+	test("collapsed fallback without renderCall still appends compact args", () => {
+		const component = new ToolExecutionComponent(
+			"custom_tool",
+			"tool-collapsed-fallback",
+			{ query: "hello", count: 3 },
+			{},
+			createBaseToolDefinition(),
+			createFakeTui(),
+			process.cwd(),
+		);
+		const rendered = stripAnsi(component.render(120).join("\n"));
+		expect(rendered).toContain('custom_tool: {"query":"hello","count":3}');
+	});
+
+	test("collapsed mcp-style titles also append compact args", () => {
+		const toolDefinition: ToolDefinition = {
+			...createBaseToolDefinition("mcp"),
+			renderCall: () => new Text("mcp  brave_web_search", 0, 0),
+		};
+		const component = new ToolExecutionComponent(
+			"mcp",
+			"tool-collapsed-mcp-proxy",
+			{ tool: "brave_web_search", args: '{"query":"hello"}' },
+			{},
+			toolDefinition,
+			createFakeTui(),
+			process.cwd(),
+		);
+		const rendered = stripAnsi(component.render(120).join("\n"));
+		expect(rendered).toContain("mcp  brave_web_search:");
+		expect(rendered).toContain('"query":"hello"');
+	});
+
+	test("collapsed tool calls append compact args after the title", () => {
+		const toolDefinition: ToolDefinition = {
+			...createBaseToolDefinition(),
+			renderCall: () => new Text("brave_search_brave_web_search", 0, 0),
+		};
+
+		const component = new ToolExecutionComponent(
+			"brave_search_brave_web_search",
+			"tool-collapsed-args",
+			{ query: "孙哥景甜故事", count: 10 },
+			{},
+			toolDefinition,
+			createFakeTui(),
+			process.cwd(),
+		);
+		const rendered = stripAnsi(component.render(120).join("\n"));
+		expect(rendered).toContain('brave_search_brave_web_search: {"query":"孙哥景甜故事","count":10}');
+		expect(rendered).not.toContain("ok");
+	});
+
+	test("collapsed tool-call args that overflow the row are truncated with ellipsis", () => {
+		const toolDefinition: ToolDefinition = {
+			...createBaseToolDefinition(),
+			renderCall: () => new Text("search_tool", 0, 0),
+		};
+
+		const component = new ToolExecutionComponent(
+			"search_tool",
+			"tool-collapsed-truncate",
+			{ query: "a".repeat(80) },
+			{},
+			toolDefinition,
+			createFakeTui(),
+			process.cwd(),
+		);
+		const rendered = stripAnsi(component.render(40).join("\n"));
+		expect(rendered).toContain("search_tool:");
+		expect(rendered).toContain("...");
+		expect(rendered.split("\n").filter((line) => line.trim().length > 0)).toHaveLength(1);
+	});
+
 	test("trims trailing blank display lines from write previews", () => {
 		const component = new ToolExecutionComponent(
 			"write",

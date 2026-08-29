@@ -93,3 +93,6 @@ collect.sh
 /rustc-*.js
 /util_cmd-*.js
 /wasm32-*.tar.br
+
+# Local clone of upstream pi used for reference — doesn't belong in this repo
+/pi-github-repo/

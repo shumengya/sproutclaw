@@ -18,6 +18,8 @@
  * Notes:
  *   Default package build skips regenerating models.generated.ts from the network.
  *   Use `bun run build:fresh` when you need an updated model catalog.
+ *   Compile uses --minify to shrink the embedded JS. Avoid --bytecode here: it roughly
+ *   doubles startup speed but adds tens of MB to the release binary.
  */
 import { spawnSync } from "node:child_process";
 import {
@@ -175,6 +177,7 @@ function main() {
 		"build",
 		"--compile",
 		`--target=${bunTarget(platform)}`,
+		"--minify",
 		"./dist/bun/cli.js",
 		"./src/utils/image-resize-worker.ts",
 		"--outfile",

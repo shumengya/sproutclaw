@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const extensionsRoot = join(repoRoot, "extensions");
+const extensionsRoot = join(repoRoot, "..", "sproutai-extension");
 
 const extensions = [
 	// New esbuild bundles (shared build-extension.mjs)
@@ -22,6 +22,7 @@ const extensions = [
 	"prompt-inject",
 	"tps",
 	"redraws",
+	"tool-mode",
 	// Existing esbuild bundles
 	"claude-tools",
 	"pi-fff",
