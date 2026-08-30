@@ -25,6 +25,8 @@ packages/*/dist/
 packages/*/dist-chrome/
 packages/*/dist-firefox/
 *.cpuprofile
+/profiles-node/
+/profiles-bun/
 
 # Environment
 .env
