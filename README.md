@@ -2,6 +2,14 @@
 
 >注意,Sprout项目仍处于早期实验性开发中,许多特性仍然不稳定,请依据最新版本为准
 
+> **SproutAI** 为本项目的正式名称。以下别称均指代同一个产品「SproutAI」：
+> - **Sprout**
+> - **SproutAI**
+> - **SproutBot**
+>
+> 在文档、代码、社区讨论中，这些名字都等价地指向本智能 AI 助手。
+
+
 `Sprout` (又称 SproutAI , SproutClaw)是一个面向服务器运维与日常开发,办公协作的通用 AI Agent 助手，基于 [pi-agent](https://github.com/earendil-works/pi) 改造而来，重点开发插件扩展系统,定时任务系统,WebUI界面,以及各种深度定制魔改,致力于打造一款个人专属Agent
 
 ## 代码结构
